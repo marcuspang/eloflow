@@ -4,6 +4,8 @@ access(all) contract EloFlow {
 
     access(all) var gameIdCount: UInt64
 
+    access(all) entitlement GameCreator
+
     access(all) event GameCreated(gameId: UInt64, creator: Address)
     access(all) event GameStarted(gameId: UInt64)
     access(all) event PlayerJoined(gameId: UInt64, player: Address)
@@ -37,16 +39,16 @@ access(all) contract EloFlow {
             self.minimumBet = minimumBet
         }
 
-        access(self) fun startGame() {
+        access(GameCreator) fun startGame() {
             pre {
                 self.state == GameState.WAITING: "Game must be in WAITING state"
-                self.players.length >= 2: "Need at least 2 players"
+                self.players.keys.length >= 2: "Need at least 2 players"
             }
             self.state = GameState.ACTIVE
             emit GameStarted(gameId: self.id)
         }
 
-        access(all) fun joinGame(player: Address, amount: UFix64) {
+        access(GameCreator) fun joinGame(player: Address, amount: UFix64) {
             pre {
                 self.state == GameState.WAITING: "Game must be in WAITING state"
                 amount >= self.minimumBet: "Must meet minimum bet"
@@ -57,6 +59,7 @@ access(all) contract EloFlow {
             emit PlayerJoined(gameId: self.id, player: player)
         }
 
+        // TODO: allow users to leave game without creator's signature
         access(all) fun leaveGame(player: Address) {
             pre {
                 self.state == GameState.WAITING: "Can only leave during WAITING state"
@@ -67,7 +70,7 @@ access(all) contract EloFlow {
             emit PlayerLeft(gameId: self.id, player: player)
         }
 
-        access(self) fun endGame(winners: [Address]) {
+        access(GameCreator) fun endGame(winners: [Address]) {
             pre {
                 self.state == GameState.ACTIVE: "Game must be ACTIVE to end"
             }
@@ -77,6 +80,8 @@ access(all) contract EloFlow {
         }
     }
 
+    // This resource is publicly accessible using the public game path, so we need to use the entitlement
+    // to secure the createGame function
     access(all) resource GameCollection {
         access(all) var gamesCreated: @{UInt64: Game}
 
@@ -84,13 +89,23 @@ access(all) contract EloFlow {
             self.gamesCreated <- {}
         }
 
-        access(all) fun createGame(minimumBet: UFix64, creator: Address): UInt64 {
+        access(GameCreator) fun borrowGame(id: UInt64): auth(GameCreator) &Game? {
+            return &self.gamesCreated[id]
+        }
+
+        access(GameCreator) fun createGame(minimumBet: UFix64, creator: Address): UInt64 {
             let gameId = EloFlow.gameIdCount
             self.gamesCreated[gameId] <-! create Game(id: gameId, minimumBet: minimumBet)
             EloFlow.gameIdCount = EloFlow.gameIdCount + 1
 
             emit GameCreated(gameId: gameId, creator: creator)
             return gameId
+        }
+
+        access(GameCreator) fun setGames(games: @{UInt64: Game}) {
+            var other <- games
+            self.gamesCreated <-> other
+            destroy other
         }
     }
 
@@ -103,5 +118,8 @@ access(all) contract EloFlow {
         self.GamePublicPath = /public/EloFlow
 
         self.gameIdCount = 1
+
+        let cap = self.account.capabilities.storage.issue<&GameCollection>(self.GameStoragePath)
+        self.account.capabilities.publish(cap, at: self.GamePublicPath)
     }
 }
