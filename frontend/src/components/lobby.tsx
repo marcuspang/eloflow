@@ -1,3 +1,4 @@
+import { useGameContext } from "@/components/game-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,34 +12,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  QUERY_GAME_COLLECTION,
   CREATE_GAME,
   CREATE_GAME_COLLECTION_AND_GAME,
-  JOIN_GAME,
+  QUERY_GAME_COLLECTION,
+  READ_LATEST_COUNT,
 } from "@/lib/contracts";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
 import * as fcl from "@onflow/fcl";
-
-type Game = {
-  id: string;
-  creator: string;
-  minimumBet: number;
-  players: number;
-};
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 export function Lobby() {
-  const [games, setGames] = useState<Game[]>([
-    { id: "1", creator: "Player1", minimumBet: 100, players: 3 },
-    { id: "2", creator: "Player2", minimumBet: 200, players: 2 },
-    { id: "3", creator: "Player3", minimumBet: 50, players: 4 },
-  ]);
+  const { setGameId } = useGameContext();
   const [newGameMinBet, setNewGameMinBet] = useState<number>(0);
-  const [joinGameId, setJoinGameId] = useState<string>("");
 
   const { data: user } = useQuery({
     queryKey: ["user"],
     queryFn: () => fcl.currentUser.snapshot(),
+  });
+
+  const { data: latestGameId } = useQuery({
+    queryKey: ["latestGameId"],
+    queryFn: async () => {
+      const result = await fcl.query({ cadence: READ_LATEST_COUNT });
+      return result as number;
+    },
   });
 
   const { data: hasGameCollection } = useQuery({
@@ -81,28 +78,12 @@ export function Lobby() {
     mutationKey: ["createGame"],
   });
 
-  const { mutate: contractJoinGame } = useMutation({
-    mutationFn: async (gameId: string) => {
-      const transactionId = await fcl.mutate({
-        cadence: JOIN_GAME,
-        args: (arg, t) => [arg(gameId, t.UInt64)],
-        proposer: fcl.currentUser,
-        payer: fcl.currentUser,
-        authorizations: [fcl.currentUser.authorization],
-        limit: 50,
-      });
-      const transaction = await fcl.tx(transactionId).onceSealed();
-      console.log({ transaction });
-    },
-    mutationKey: ["joinGame"],
-  });
-
   const createGame = () => {
     contractCreateGame(newGameMinBet);
   };
 
-  const joinGame = (id: string) => {
-    contractJoinGame(id);
+  const viewGame = (id: number) => {
+    setGameId(id);
   };
 
   return (
@@ -141,32 +122,6 @@ export function Lobby() {
                   <Button onClick={createGame}>Create Game</Button>
                 </DialogContent>
               </Dialog>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">Join Game</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Join Game</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid items-center grid-cols-4 gap-4">
-                      <Label htmlFor="gameId" className="text-right">
-                        Game ID
-                      </Label>
-                      <Input
-                        id="gameId"
-                        className="col-span-3"
-                        value={joinGameId}
-                        onChange={(e) => setJoinGameId(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <Button onClick={() => joinGame(joinGameId)}>
-                    Join Game
-                  </Button>
-                </DialogContent>
-              </Dialog>
             </div>
             <Card>
               <CardHeader>
@@ -178,22 +133,19 @@ export function Lobby() {
                     <thead>
                       <tr>
                         <th className="p-2 text-left">ID</th>
-                        <th className="p-2 text-left">Creator</th>
-                        <th className="p-2 text-left">Minimum Bet</th>
-                        <th className="p-2 text-left">Players</th>
                         <th className="p-2 text-left">Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {games.map((game) => (
-                        <tr key={game.id} className="border-t">
-                          <td className="p-2">{game.id}</td>
-                          <td className="p-2">{game.creator}</td>
-                          <td className="p-2">{game.minimumBet}</td>
-                          <td className="p-2">{game.players}</td>
+                      {Array.from(
+                        { length: latestGameId ?? 0 },
+                        (_, i) => i + 1
+                      ).map((gameId) => (
+                        <tr key={gameId} className="border-t">
+                          <td className="p-2">{gameId}</td>
                           <td className="p-2">
-                            <Button onClick={() => joinGame(game.id)} size="sm">
-                              Join
+                            <Button onClick={() => viewGame(gameId)} size="sm">
+                              View
                             </Button>
                           </td>
                         </tr>

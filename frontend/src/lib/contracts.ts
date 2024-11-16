@@ -253,3 +253,10 @@ access(all) fun main(user: Address): [UInt64] {
     return gameCollectionRef.getAllGameIds()
 }
 `.trim();
+
+export const READ_LATEST_COUNT = `import EloFlow from ${ELO_FLOW_ADDRESS}
+
+access(all) fun main(): UInt64 {
+    return EloFlow.gameIdCount
+}
+`.trim();

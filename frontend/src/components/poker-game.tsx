@@ -8,15 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  CREATE_GAME,
-  CREATE_GAME_COLLECTION_AND_GAME,
-  JOIN_GAME,
-  QUERY_GAME_COLLECTION,
-  QUERY_STATE,
-} from "@/lib/contracts";
+import { QUERY_STATE } from "@/lib/contracts";
 import * as fcl from "@onflow/fcl";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 type Player = { address: string; chips: number };
@@ -33,31 +27,33 @@ function convertGameState(rawValue: number) {
   return "UNKNOWN";
 }
 
-export function PokerGame() {
+interface Props {
+  gameId: number;
+}
+
+export function PokerGame({ gameId }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [minimumBet, setMinimumBet] = useState<number>(0);
   const [currentBet, setCurrentBet] = useState<number>(0);
   const [pot, setPot] = useState<number>(0);
-  const [currentGameId, setCurrentGameId] = useState<number>(2);
 
   const { data: user } = useQuery({
     queryKey: ["user"],
     queryFn: () => fcl.currentUser.snapshot(),
   });
   const { data: gameState } = useQuery({
-    queryKey: ["gameState", currentGameId],
+    queryKey: ["gameState", gameId],
     queryFn: async () => {
       const result = await fcl.query({
         cadence: QUERY_STATE,
         args: (arg, t) => [
-          arg(currentGameId.toString(), t.UInt64),  
+          arg(gameId.toString(), t.UInt64),
           arg(user?.addr, t.Address),
         ],
       });
       console.log({ result });
       return result as { rawValue: string };
     },
-    enabled: !!currentGameId && !!user?.addr,
+    enabled: !!gameId && !!user?.addr,
   });
 
   const leaveGame = (address: string) => {
