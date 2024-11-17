@@ -94,6 +94,10 @@ pnpm run dev
 - By using a custom authorization function for the payer, we can generate a signed envelope for the transaction
 - The signed envelope is returned to the client, and the user can simply proceed with the transaction as normal
 
+## Remarks
+
+I also attempted to use the [Flow-FCL](https://github.com/onflow/fcl-js) library to create a wagmi provider, but I ran into some issues with the FCL library.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -109,7 +113,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions and support, please:
 - Open an issue
-- Contact me via email
+- Contact me via email or Twitter [@marcuspangeth](https://x.com/marcuspangeth)
 
 ---
 Built with ❤️ for the Flow ecosystem
