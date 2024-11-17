@@ -17,10 +17,10 @@ export function setupFlow() {
       "flow.network": "testnet",
       "accessNode.api": "https://rest-testnet.onflow.org",
       "discovery.wallet": "https://fcl-discovery.onflow.org/testnet/authn",
-      "app.detail.title": "Test Harness",
-      "app.detail.icon": "https://i.imgur.com/r23Zhvu.png",
-      "app.detail.description": "A test harness for FCL",
-      "app.detail.url": "https://myapp.com",
+      "app.detail.title": "ELO Flow",
+      "app.detail.icon": "https://eloflow.vercel.app/logo.png",
+      "app.detail.description": "Fully on-chain poker game on Flow",
+      "app.detail.url": "https://eloflow.vercel.app",
       "walletconnect.projectId": "8fd34a822be9e49c93bf7356cab97ca8",
     });
   }
