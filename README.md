@@ -1,4 +1,4 @@
-# 🎮 ELO Flow - Decentralized Poker on Flow Blockchain
+# 🃏 ELO Flow - Decentralized Poker on Flow Blockchain
 
 A fully decentralized poker game built on the Flow blockchain, using verifiable random shuffling for each game, gasless transactions, and cross-chain data availability using Avail DA.
 
