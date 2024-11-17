@@ -1,7 +1,7 @@
 {
 	"contracts": {
-		"Counter": {
-			"source": "cadence/contracts/Counter.cdc",
+		"EloFlow": {
+			"source": "cadence/contracts/EloFlow.cdc",
 			"aliases": {
 				"testing": "0000000000000007"
 			}
@@ -79,12 +79,28 @@
 		"testnet": "access.devnet.nodes.onflow.org:9000"
 	},
 	"accounts": {
+		"deployer": {
+			"address": "ac5a640b3857701d",
+			"key": {
+				"type": "file",
+				"signatureAlgorithm": "ECDSA_secp256k1",
+				"hashAlgorithm": "SHA2_256",
+				"location": "deployer.pkey"
+			}
+		},
 		"emulator-account": {
 			"address": "f8d6e0586b0a20c7",
 			"key": {
 				"type": "file",
 				"location": "emulator-account.pkey"
 			}
+		}
+	},
+	"deployments": {
+		"testnet": {
+			"deployer": [
+				"EloFlow"
+			]
 		}
 	}
 }

@@ -8,6 +8,5 @@ transaction(gameId: UInt64) {
 
         log("Card 0: Suit ".concat(playerHand.cards[0].suit.rawValue.toString()).concat(" Rank: ").concat(playerHand.cards[0].rank.toString()))
         log("Card 1: Suit ".concat(playerHand.cards[1].suit.rawValue.toString()).concat(" Rank: ").concat(playerHand.cards[1].rank.toString()))
-
     }
 }

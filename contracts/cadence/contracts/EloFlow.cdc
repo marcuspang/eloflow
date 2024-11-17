@@ -59,12 +59,14 @@ access(all) contract EloFlow {
 
     access(all) resource Game {
         access(all) let id: UInt64
+        // TODO: move this to private storage slot
         access(self) let vrf: UInt256  // For generating cards
         access(all) var state: GameState
         access(all) var pot: UFix64
         access(all) var players: {Address: UFix64} // Player -> Current Bet
         access(all) var activePlayers: {Address: Bool} // Player -> Active status
-        access(self) var submittedHands: @{Address: PlayerHand}
+        // This is okay to be public since everyone's hand is revealed in poker at the end
+        access(all) var submittedHands: @{Address: PlayerHand}
         access(all) var winners: [Address]
         access(all) var currentTurn: Address?
         access(all) var minimumBet: UFix64
@@ -103,8 +105,8 @@ access(all) contract EloFlow {
 
         access(self) fun dealCardsToPlayer(player: auth(SaveValue) &Account) {
             // TODO: use more cryptographically secure mechanism
-            let seed = self.vrf % 52 // 52 cards in a deck
-            let seed2 = (self.vrf / 52) % 51 // Use different parts of VRF for second card
+            let seed = (self.vrf / UInt256(self.activePlayers.length)) % 52 // 52 cards in a deck
+            let seed2 = (self.vrf / UInt256(self.activePlayers.length) / 52) % 51 // Use different parts of VRF for second card
 
             // Generate cards
             let card1Suit = Suit(rawValue: UInt8(seed % 4))!
@@ -212,7 +214,7 @@ access(all) contract EloFlow {
             }
         }
 
-        access(self) fun checkAllHandsSubmitted(): Bool {
+        access(self) view fun checkAllHandsSubmitted(): Bool {
             for player in self.activePlayers.keys {
                 if self.activePlayers[player]! && !self.submittedHands.containsKey(player) {
                     return false
@@ -221,7 +223,7 @@ access(all) contract EloFlow {
             return true
         }
 
-        access(self) fun getHighestBet(): UFix64 {
+        access(self) view fun getHighestBet(): UFix64 {
             var highest: UFix64 = 0.0
             for bet in self.players.values {
                 if bet > highest {
@@ -309,8 +311,8 @@ access(all) contract EloFlow {
             pre {
                 self.state == GameState.ACTIVE: "Game must be ACTIVE to end"
             }
-            self.state = GameState.ENDED
             self.determineWinners()
+            self.state = GameState.ENDED
             emit GameEnded(gameId: self.id, winners: [])
         }
     }
@@ -325,7 +327,11 @@ access(all) contract EloFlow {
             self.gamesCreated <- {}
         }
 
-        access(GameCreator) fun borrowGame(id: UInt64): auth(GameCreator) &Game? {
+        access(all) view fun getAllGameIds(): [UInt64] {
+            return self.gamesCreated.keys
+        }
+
+        access(GameCreator) view fun borrowGame(id: UInt64): auth(GameCreator) &Game? {
             return &self.gamesCreated[id]
         }
 
@@ -349,7 +355,7 @@ access(all) contract EloFlow {
         return <- create GameCollection()
     }
 
-    access(all) fun generatePlayerHandStoragePath(id: UInt64): String {
+    access(all) view fun generatePlayerHandStoragePath(id: UInt64): String {
         return EloFlow.PlayerHandStoragePath.toString().concat("/").concat(id.toString())
     }
 
