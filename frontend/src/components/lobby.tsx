@@ -17,6 +17,7 @@ import {
   QUERY_GAME_COLLECTION,
   READ_LATEST_COUNT,
 } from "@/lib/contracts";
+import { payerAuthz } from "@/lib/flow";
 import * as fcl from "@onflow/fcl";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -55,7 +56,7 @@ export function Lobby() {
         cadence: CREATE_GAME,
         args: (arg, t) => [arg(bet.toFixed(1), t.UFix64)],
         proposer: fcl.currentUser,
-        payer: fcl.currentUser,
+        payer: payerAuthz,
         authorizations: [fcl.currentUser.authorization],
         limit: 50,
       };

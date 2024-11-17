@@ -1,6 +1,8 @@
+import { BACKEND_URL, PAYER_ADDRESS } from "@/constants";
 import * as fcl from "@onflow/fcl";
 
 const USE_DEVNET = false;
+const PAYER_KEYID = 0;
 
 export function setupFlow() {
   if (USE_DEVNET) {
@@ -23,3 +25,23 @@ export function setupFlow() {
     });
   }
 }
+
+export const payerAuthz = async (account: any = {}) => {
+  return {
+    ...account,
+    tempId: `${PAYER_ADDRESS}-${PAYER_KEYID}`,
+    keyId: PAYER_KEYID,
+    signingFunction: async (signable: any) => {
+      const res = await fetch(`${BACKEND_URL}/sign`, {
+        method: "POST",
+        body: JSON.stringify({ message: signable }),
+      });
+      const { signature } = await res.json();
+      return {
+        addr: PAYER_ADDRESS,
+        keyId: PAYER_KEYID,
+        signature,
+      };
+    },
+  };
+};

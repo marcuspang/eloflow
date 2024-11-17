@@ -1,5 +1,5 @@
 import { GameProvider } from "@/components/game-context";
-import { Lobby } from "@/components/lobby";
+import { HomePage } from "@/components/home-page";
 import { setupFlow } from "@/lib/flow";
 
 setupFlow();
@@ -7,7 +7,7 @@ setupFlow();
 function App() {
   return (
     <GameProvider>
-      <Lobby />
+      <HomePage />
     </GameProvider>
   );
 }

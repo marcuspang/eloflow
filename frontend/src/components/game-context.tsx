@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export interface GameContext {
   gameId?: number;
@@ -17,10 +17,33 @@ export function useGameContext() {
   return context;
 }
 
-export function GameProvider({ children }: { children: React.ReactNode }) {
+interface Props {
+  children?: React.ReactNode;
+}
+
+export function GameProvider({ children }: Props) {
+  // try and reach gameId from URL state
   const [gameId, setGameId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameIdParam = urlParams.get("gameId");
+    if (gameIdParam) {
+      setGameId(parseInt(gameIdParam));
+    }
+  }, []);
+
   return (
-    <GameContext.Provider value={{ gameId, setGameId }}>
+    <GameContext.Provider
+      value={{
+        gameId,
+        setGameId: (newGameId) => {
+          // update URL state
+          setGameId(newGameId);
+          window.history.replaceState({}, "", `?gameId=${newGameId}`);
+        },
+      }}
+    >
       {children}
     </GameContext.Provider>
   );

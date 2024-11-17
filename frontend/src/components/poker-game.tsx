@@ -8,9 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QUERY_STATE } from "@/lib/contracts";
+import {
+  JOIN_GAME,
+  LEAVE_GAME,
+  QUERY_STATE,
+  START_GAME,
+} from "@/lib/contracts";
+import { payerAuthz } from "@/lib/flow";
 import * as fcl from "@onflow/fcl";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 type Player = { address: string; chips: number };
@@ -50,19 +56,70 @@ export function PokerGame({ gameId }: Props) {
           arg(user?.addr, t.Address),
         ],
       });
-      console.log({ result });
-      return result as { rawValue: string };
+      return result as {
+        uuid: string;
+        id: string;
+        vrf: string;
+        state: {
+          rawValue: string;
+        };
+        pot: string;
+        players: {
+          [key: string]: string;
+        };
+        activePlayers: {
+          [key: string]: string;
+        };
+        submittedHands: {
+          [key: string]: string;
+        };
+        winners: string[];
+        currentTurn: string | null;
+        minimumBet: string;
+        lastRaise: string;
+      };
     },
     enabled: !!gameId && !!user?.addr,
   });
+  const { mutate: joinGame } = useMutation({
+    mutationFn: async (address: string) => {
+      await fcl.mutate({
+        cadence: JOIN_GAME,
+        args: (arg, t) => [
+          arg(gameId.toString(), t.UInt64),
+          arg(betAmount, t.UFix64),
+        ],
+        payer: payerAuthz,
+        authorizations: [fcl.currentUser.authorization],
+      });
+    },
+  });
+  const { mutate: contractLeaveGame } = useMutation({
+    mutationFn: async (address: string) => {
+      await fcl.mutate({
+        cadence: LEAVE_GAME,
+        payer: payerAuthz,
+        args: (arg, t) => [arg(address, t.Address)],
+      });
+    },
+  });
+  const { mutate: contractStartGame } = useMutation({
+    mutationFn: async () => {
+      await fcl.mutate({
+        cadence: START_GAME,
+        args: (arg, t) => [arg(gameId.toString(), t.UInt64)],
+        payer: payerAuthz,
+        authorizations: [fcl.currentUser.authorization],
+      });
+    },
+  });
 
   const leaveGame = (address: string) => {
-    setPlayers(players.filter((player) => player.address !== address));
-    // Here you would call the backend leaveGame function
+    contractLeaveGame(address);
   };
 
   const startGame = () => {
-    // Here you would call the backend startGame function
+    contractStartGame();
   };
 
   const raise = (address: string, amount: number) => {
@@ -85,10 +142,10 @@ export function PokerGame({ gameId }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Poker Game</CardTitle>
-          {currentGameId > 0 && (
+          {gameId > 0 && (
             <Badge>
-              {convertGameState(Number(gameState?.rawValue ?? 0))} #
-              {currentGameId}
+              {convertGameState(Number(gameState?.state.rawValue ?? 0))} #
+              {gameId}
             </Badge>
           )}
         </CardHeader>
@@ -109,17 +166,32 @@ export function PokerGame({ gameId }: Props) {
           </div>
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Game Info</h3>
-            <p>Current Bet: {currentBet}</p>
-            <p>Pot: {pot}</p>
+            <p>Current Bet: {gameState?.minimumBet}</p>
+            <p>Pot: {gameState?.pot}</p>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button onClick={startGame} disabled={gameState?.rawValue !== "0"}>
+        <CardFooter className="flex space-x-4">
+          <Button
+            onClick={() => leaveGame(user?.addr ?? "")}
+            disabled={gameState?.state.rawValue !== "0"}
+          >
+            Leave Game
+          </Button>
+          <Button
+            onClick={() => joinGame(user?.addr ?? "")}
+            disabled={gameState?.state.rawValue !== "0"}
+          >
+            Join Game
+          </Button>
+          <Button
+            onClick={startGame}
+            disabled={gameState?.state.rawValue !== "0"}
+          >
             Start Game
           </Button>
         </CardFooter>
       </Card>
-      {gameState?.rawValue === "1" && (
+      {gameState?.state.rawValue === "1" && (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>Player Actions</CardTitle>

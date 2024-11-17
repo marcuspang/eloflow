@@ -234,12 +234,12 @@ transaction(gameId: UInt64) {
 
 export const QUERY_STATE = `import EloFlow from ${ELO_FLOW_ADDRESS}
 
-access(all) fun main(gameId: UInt64, creator: Address): EloFlow.GameState? {
+access(all) fun main(gameId: UInt64, creator: Address): &EloFlow.Game? {
   let cap = getAccount(creator).capabilities.get<&EloFlow.GameCollection>(EloFlow.GamePublicPath)
 
   let ref = cap.borrow() ?? panic("Failed to borrow games collection")
   let game = ref.gamesCreated[gameId]
-  return game?.state
+  return game
 }
 `.trim();
 
