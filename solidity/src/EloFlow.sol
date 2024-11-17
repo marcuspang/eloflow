@@ -26,13 +26,12 @@ contract EloFlow {
             return BASE_RATING;
         }
 
-        // Calculate win rate percentage (0-1000)
         uint256 winRate = (wins * 1000) / (wins + losses);
 
-        // Adjust rating based on deviation from 50% (500)
-        int256 ratingChange = (int256(winRate) - 500) * int256(K_FACTOR) / 1000;
-
-        // Apply rating change, ensuring we don't go below 0
+        // For 100% win rate (1000), change should be +32
+        // For 0% win rate (0), change should be -32
+        // For 50% win rate (500), change should be 0
+        int256 ratingChange = ((int256(winRate) - 500) * int256(K_FACTOR)) / 500;
         int256 newRating = int256(BASE_RATING) + ratingChange;
         return newRating < 0 ? 0 : uint256(newRating);
     }
