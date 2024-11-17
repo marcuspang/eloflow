@@ -12,6 +12,7 @@ import {
   JOIN_GAME,
   LEAVE_GAME,
   QUERY_STATE,
+  READ_HAND,
   START_GAME,
 } from "@/lib/contracts";
 import { payerAuthz } from "@/lib/flow";
@@ -46,6 +47,18 @@ export function PokerGame({ gameId }: Props) {
     queryKey: ["user"],
     queryFn: () => fcl.currentUser.snapshot(),
   });
+  const { data: hand } = useQuery({
+    queryKey: ["getHand", gameId],
+    queryFn: async () => {
+      const result = await fcl.query({
+        cadence: READ_HAND,
+        args: (arg, t) => [arg(gameId.toString(), t.UInt64)],
+        authorizations: [fcl.currentUser.authorization],
+      });
+      return result;
+    },
+  });
+  console.log({ hand });
   const { data: gameState } = useQuery({
     queryKey: ["gameState", gameId],
     queryFn: async () => {
@@ -81,7 +94,7 @@ export function PokerGame({ gameId }: Props) {
     },
     enabled: !!gameId && !!user?.addr,
   });
-  const { mutate: joinGame } = useMutation({
+  const { mutate: contractJoinGame } = useMutation({
     mutationFn: async (address: string) => {
       await fcl.mutate({
         cadence: JOIN_GAME,
@@ -90,7 +103,11 @@ export function PokerGame({ gameId }: Props) {
           arg(betAmount, t.UFix64),
         ],
         payer: payerAuthz,
-        authorizations: [fcl.currentUser.authorization],
+        // TODO: authorizations needs game creator
+        authorizations: [
+          fcl.currentUser.authorization,
+          fcl.currentUser.authorization,
+        ],
       });
     },
   });
@@ -99,6 +116,7 @@ export function PokerGame({ gameId }: Props) {
       await fcl.mutate({
         cadence: LEAVE_GAME,
         payer: payerAuthz,
+        // TODO: authorizations needs game creator
         args: (arg, t) => [arg(address, t.Address)],
       });
     },
@@ -109,10 +127,15 @@ export function PokerGame({ gameId }: Props) {
         cadence: START_GAME,
         args: (arg, t) => [arg(gameId.toString(), t.UInt64)],
         payer: payerAuthz,
+        // TODO: needs to be game creator only
         authorizations: [fcl.currentUser.authorization],
       });
     },
   });
+
+  const joinGame = (address: string) => {
+    contractJoinGame(address);
+  };
 
   const leaveGame = (address: string) => {
     contractLeaveGame(address);
@@ -122,20 +145,11 @@ export function PokerGame({ gameId }: Props) {
     contractStartGame();
   };
 
-  const raise = (address: string, amount: number) => {
-    setCurrentBet(currentBet + amount);
-    setPot(pot + amount);
-    // Here you would call the backend raise function
-  };
+  const raise = (address: string, amount: number) => {};
 
-  const call = (address: string) => {
-    setPot(pot + currentBet);
-    // Here you would call the backend call function
-  };
+  const call = (address: string) => {};
 
-  const submitHand = (address: string) => {
-    // Here you would call the backend submitHand function
-  };
+  const submitHand = (address: string) => {};
 
   return (
     <div className="container p-4 mx-auto">

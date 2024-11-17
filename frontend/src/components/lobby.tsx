@@ -23,10 +23,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 export function Lobby() {
-  const { setGameId } = useGameContext();
+  const { setGameId, logIn, logOut, user } = useGameContext();
   const [newGameMinBet, setNewGameMinBet] = useState<number>(0);
 
-  const { data: user } = useQuery({
+  const { data: userData } = useQuery({
     queryKey: ["user"],
     queryFn: () => fcl.currentUser.snapshot(),
   });
@@ -40,11 +40,11 @@ export function Lobby() {
   });
 
   const { data: hasGameCollection } = useQuery({
-    queryKey: ["gameCollection", user?.addr],
+    queryKey: ["gameCollection", userData?.addr],
     queryFn: async () => {
       const result = await fcl.query({
         cadence: QUERY_GAME_COLLECTION,
-        args: (arg, t) => [arg(user?.addr, t.Address)],
+        args: (arg, t) => [arg(userData?.addr, t.Address)],
       });
       return result as boolean;
     },
@@ -96,6 +96,11 @@ export function Lobby() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex space-x-2">
+              {user?.loggedIn ? (
+                <Button onClick={logOut}>Log Out</Button>
+              ) : (
+                <Button onClick={logIn}>Log In</Button>
+              )}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button>Create New Game</Button>
