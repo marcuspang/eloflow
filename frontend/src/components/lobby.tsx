@@ -56,7 +56,7 @@ export function Lobby() {
         cadence: CREATE_GAME,
         args: (arg, t) => [arg(bet.toFixed(1), t.UFix64)],
         proposer: fcl.currentUser,
-        payer: payerAuthz,
+        // payer: payerAuthz,
         authorizations: [fcl.currentUser.authorization],
         limit: 50,
       };

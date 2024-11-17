@@ -102,10 +102,10 @@ export function PokerGame({ gameId }: Props) {
           arg(gameId.toString(), t.UInt64),
           arg(betAmount, t.UFix64),
         ],
-        payer: payerAuthz,
+        // payer: payerAuthz,
         // TODO: authorizations needs game creator
         authorizations: [
-          fcl.currentUser.authorization,
+          // fcl.currentUser.authorization,
           fcl.currentUser.authorization,
         ],
       });
@@ -115,7 +115,7 @@ export function PokerGame({ gameId }: Props) {
     mutationFn: async (address: string) => {
       await fcl.mutate({
         cadence: LEAVE_GAME,
-        payer: payerAuthz,
+        // payer: payerAuthz,
         // TODO: authorizations needs game creator
         args: (arg, t) => [arg(address, t.Address)],
       });
@@ -126,7 +126,7 @@ export function PokerGame({ gameId }: Props) {
       await fcl.mutate({
         cadence: START_GAME,
         args: (arg, t) => [arg(gameId.toString(), t.UInt64)],
-        payer: payerAuthz,
+        // payer: payerAuthz,
         // TODO: needs to be game creator only
         authorizations: [fcl.currentUser.authorization],
       });
