@@ -73,7 +73,7 @@ pnpm run dev
 ## 🎮 Playing the Game
 
 ### Web Interface
-1. Visit [https://flowelo.vercel.app/](https://flowelo.vercel.app/)
+1. Visit [https://eloflow.vercel.app/](https://eloflow.vercel.app/)
 2. Connect your Flow wallet
 3. Join or create a game
 4. Start playing!
